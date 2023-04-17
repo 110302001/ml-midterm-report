@@ -1,1 +1,122 @@
-123
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+#train
+df=pd.read_csv("train.csv")
+
+df.head()
+df.info()
+df.isnull().sum()
+df.describe()
+df.shape
+df.columns
+
+df['quality'].unique()
+
+#sns.pairplot(df)
+
+df.hist(bins=30, figsize=(15,15))
+plt.show()
+
+df.skew()
+
+#columns=['fixed acidity', 'volatile acidity', 'citric acid','residual sugar', 'chlorides', 'free sulfur dioxide','total sulfur dioxide', 'density', 'pH', 'sulphates', 'alcohol','quality']
+#for i in columns:
+    #q1=df[i].quantile(0.25)
+    #q2=df[i].quantile(0.75)
+    
+    #df[i]= np.where(df[i]>q2,q2,df[i])
+    #df[i]=np.where(df[i]<q1,q1,df[i])
+
+q1=df["residual sugar"].quantile(0.25)
+q2=df["residual sugar"].quantile(0.75)
+df["residual sugar"]=np.where(df["residual sugar"]<q1,q1,df["residual sugar"])
+df["residual sugar"]=np.where(df["residual sugar"]>q2,q2,df["residual sugar"])
+
+q1=df["chlorides"].quantile(0.25)
+q2=df["chlorides"].quantile(0.75)
+df["chlorides"]=np.where(df["chlorides"]<q1,q1,df["chlorides"])
+df["chlorides"]=np.where(df["chlorides"]>q2,q2,df["chlorides"])
+
+df["free sulfur dioxide"]=np.log(df["free sulfur dioxide"])
+df["sulphates"]=np.log(df["sulphates"])
+df["fixed acidity"]=np.log(df["fixed acidity"])
+df["alcohol"]=np.log(df["alcohol"])
+df["volatile acidity"]=np.log(df["volatile acidity"])
+df["total sulfur dioxide"]=np.log(df["total sulfur dioxide"])
+
+df.skew()
+
+corr=df.corr()
+plt.figure(figsize=(10,8))
+sns.heatmap(corr)
+plt.show()
+
+df['quality'].value_counts().plot(kind='pie')
+
+x_train=df.drop("quality",axis=1)
+x_train
+y_train=df.quality
+y_train
+
+
+#test
+df2=pd.read_csv("test.csv")
+
+df2.head()
+df2.info()
+df2.isnull().sum()
+df2.describe()
+df2.shape
+df2.columns
+
+sns.pairplot(df2)
+
+df2.hist(bins=30, figsize=(15,15))
+plt.show()
+
+df2.skew()
+
+q1=df2["residual sugar"].quantile(0.25)
+q2=df2["residual sugar"].quantile(0.75)
+df2["residual sugar"]=np.where(df2["residual sugar"]<q1,q1,df2["residual sugar"])
+df2["residual sugar"]=np.where(df2["residual sugar"]>q2,q2,df2["residual sugar"])
+
+
+q1=df2["chlorides"].quantile(0.25)
+q2=df2["chlorides"].quantile(0.75)
+df2["chlorides"]=np.where(df2["chlorides"]<q1,q1,df2["chlorides"])
+df2["chlorides"]=np.where(df2["chlorides"]>q2,q2,df2["chlorides"])
+
+df2["free sulfur dioxide"]=np.log(df2["free sulfur dioxide"])
+df2["sulphates"]=np.log(df2["sulphates"])
+df2["alcohol"]=np.log(df2["alcohol"])
+df2["volatile acidity"]=np.log(df2["volatile acidity"])
+df2["total sulfur dioxide"]=np.log(df2["total sulfur dioxide"])
+
+df2.skew()
+
+corr=df2.corr()
+plt.figure(figsize=(10,8))
+sns.heatmap(corr)
+plt.show()
+
+x_test=df2
+
+
+from sklearn.preprocessing import StandardScaler
+scaler = StandardScaler()
+x_train = scaler.fit_transform(x_train)
+x_test = scaler.transform(x_test)
+
+from sklearn.ensemble import RandomForestClassifier
+model=RandomForestClassifier(random_state=2,max_depth=4)
+model.fit(x_train,y_train)
+
+y_pred=model.predict(x_test)
+y_pred.astype('int32')
+out=pd.DataFrame({'ID':df2.Id,'quality':y_pred})
+out.to_csv('submission.csv',index=False)
+
